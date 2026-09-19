@@ -28,7 +28,7 @@ import AdminLayout from "./AdminLayout";
 import ProjectDocuments from "./ProjectDocuments";
 
 const API_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  import.meta.env.API_URL?.replace(/\/$/, "") ||
   "http://localhost:5000/api";
 
 const PROJECTS_API = `${API_URL}/projects`;

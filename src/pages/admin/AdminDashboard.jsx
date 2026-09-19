@@ -19,7 +19,7 @@ import {
 import AdminSidebar from "./AdminSidebar";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  import.meta.env.API_URL || "http://localhost:5000/api";
 
 const apiRequest = async (endpoint, options = {}) => {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
