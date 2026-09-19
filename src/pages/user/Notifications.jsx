@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Check, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {
+  Bell,
+  Check,
+  Loader2,
+  Calendar,
+  Users,
+  Flag,
+  FolderKanban,
+  X,
+} from "lucide-react";
 
 import UserLayout from "./UserLayout";
 import { useAuth } from "../../context/AuthContext";
@@ -8,13 +16,16 @@ import { useAuth } from "../../context/AuthContext";
 const API_URL = import.meta.env.API_URL;
 
 const Notifications = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
   const [error, setError] = useState("");
+
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectLoading, setProjectLoading] = useState(false);
+  const [projectError, setProjectError] = useState("");
 
   const userId = user?._id || user?.id || user?.uid;
 
@@ -26,13 +37,15 @@ const Notifications = () => {
       setError("");
 
       const response = await fetch(
-        `${API_URL}/notifications/${userId}`
+        `${API_URL}/notifications/${userId}`,
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to load notifications");
+        throw new Error(
+          data.message || "Failed to load notifications",
+        );
       }
 
       setNotifications(data.notifications || []);
@@ -54,21 +67,23 @@ const Notifications = () => {
         `${API_URL}/notifications/${notificationId}/read`,
         {
           method: "PATCH",
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to mark notification");
+        throw new Error(
+          data.message || "Failed to mark notification",
+        );
       }
 
       setNotifications((current) =>
         current.map((notification) =>
           notification._id === notificationId
             ? { ...notification, isRead: true }
-            : notification
-        )
+            : notification,
+        ),
       );
     } catch (err) {
       console.error("Mark notification error:", err);
@@ -85,20 +100,22 @@ const Notifications = () => {
         `${API_URL}/notifications/${userId}/read-all`,
         {
           method: "PATCH",
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to mark all notifications");
+        throw new Error(
+          data.message || "Failed to mark all notifications",
+        );
       }
 
       setNotifications((current) =>
         current.map((notification) => ({
           ...notification,
           isRead: true,
-        }))
+        })),
       );
     } catch (err) {
       console.error("Mark all notifications error:", err);
@@ -107,18 +124,56 @@ const Notifications = () => {
     }
   };
 
+  // Load project details on the same page
+  const fetchProjectDetails = async (projectId) => {
+    if (!projectId) return;
+
+    try {
+      setProjectLoading(true);
+      setProjectError("");
+
+      const response = await fetch(
+        `${API_URL}/projects/${projectId}`,
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load project details",
+        );
+      }
+
+      setSelectedProject(data.project || data);
+    } catch (err) {
+      console.error("Fetch project details error:", err);
+      setProjectError(
+        err.message || "Failed to load project details",
+      );
+      setSelectedProject(null);
+    } finally {
+      setProjectLoading(false);
+    }
+  };
+
   const handleNotificationClick = async (notification) => {
+    // Mark unread notification as read
     if (!notification.isRead) {
       await markAsRead(notification._id);
     }
 
-    if (notification.projectId) {
-      navigate(`/user/dashboard/projects/${notification.projectId}`);
+    // No project → nothing else to display
+    if (!notification.projectId) {
+      setSelectedProject(null);
+      return;
     }
+
+    // Same page project details
+    await fetchProjectDetails(notification.projectId);
   };
 
   const unreadCount = notifications.filter(
-    (notification) => !notification.isRead
+    (notification) => !notification.isRead,
   ).length;
 
   return (
@@ -158,6 +213,7 @@ const Notifications = () => {
         )}
       </div>
 
+      {/* Notifications */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="p-5 border-b border-slate-200 flex items-center justify-between">
           <div>
@@ -230,7 +286,9 @@ const Notifications = () => {
             {notifications.map((notification) => (
               <div
                 key={notification._id}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={() =>
+                  handleNotificationClick(notification)
+                }
                 className={`
                   p-5 flex items-start gap-4 transition
                   ${
@@ -279,7 +337,7 @@ const Notifications = () => {
                   <div className="flex items-center gap-3 mt-3">
                     <p className="text-xs text-slate-400">
                       {new Date(
-                        notification.createdAt
+                        notification.createdAt,
                       ).toLocaleString()}
                     </p>
 
@@ -302,6 +360,167 @@ const Notifications = () => {
           </div>
         )}
       </div>
+
+      {/* Same-page project details */}
+      {(projectLoading || projectError || selectedProject) && (
+        <div className="mt-6 bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                <FolderKanban size={19} />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  Project Details
+                </h3>
+
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Notification project information
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedProject(null)}
+              className="h-9 w-9 rounded-xl bg-slate-100 hover:bg-slate-200
+                flex items-center justify-center text-slate-500 transition"
+            >
+              <X size={17} />
+            </button>
+          </div>
+
+          {projectLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2
+                size={26}
+                className="animate-spin text-slate-400"
+              />
+
+              <p className="text-sm text-slate-400 mt-3">
+                Loading project details...
+              </p>
+            </div>
+          ) : projectError ? (
+            <div className="py-16 text-center px-6">
+              <p className="text-sm text-red-500">
+                {projectError}
+              </p>
+            </div>
+          ) : (
+            <div className="p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-slate-900">
+                  {selectedProject.name}
+                </h2>
+
+                {selectedProject.description && (
+                  <p className="text-sm text-slate-500 mt-2 leading-6">
+                    {selectedProject.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Flag size={15} />
+                    <span className="text-xs">
+                      Priority
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-800 capitalize">
+                    {selectedProject.priority || "—"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <FolderKanban size={15} />
+                    <span className="text-xs">
+                      Status
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-800 capitalize">
+                    {selectedProject.status || "—"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Calendar size={15} />
+                    <span className="text-xs">
+                      Start Date
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-800">
+                    {selectedProject.startDate
+                      ? new Date(
+                          selectedProject.startDate,
+                        ).toLocaleDateString()
+                      : "—"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Calendar size={15} />
+                    <span className="text-xs">
+                      Due Date
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-800">
+                    {selectedProject.dueDate
+                      ? new Date(
+                          selectedProject.dueDate,
+                        ).toLocaleDateString()
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {Array.isArray(selectedProject.members) &&
+                selectedProject.members.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users
+                        size={17}
+                        className="text-slate-500"
+                      />
+
+                      <h4 className="text-sm font-semibold text-slate-800">
+                        Assigned Members
+                      </h4>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.members.map(
+                        (member, index) => (
+                          <span
+                            key={member?._id || member || index}
+                            className="px-3 py-1.5 rounded-lg bg-slate-100
+                              text-xs font-medium text-slate-600"
+                          >
+                            {typeof member === "object"
+                              ? member.name ||
+                                member.email ||
+                                "Member"
+                              : member}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
+          )}
+        </div>
+      )}
     </UserLayout>
   );
 };
