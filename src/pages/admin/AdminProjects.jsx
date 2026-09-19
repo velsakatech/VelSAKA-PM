@@ -27,13 +27,19 @@ import {
 import AdminLayout from "./AdminLayout";
 import ProjectDocuments from "./ProjectDocuments";
 
-const API_URL =
-  import.meta.env.API_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000/api";
+// =========================================================
+// PRODUCTION API
+// =========================================================
 
-const PROJECTS_API = `${API_URL}/projects`;
-const USERS_API = `${API_URL}/users`;
-const PROJECT_DOCUMENTS_API = `${API_URL}/project-documents`;
+const API_BASE_URL = import.meta.env.API_URL?.trim().replace(/\/+$/, "");
+
+if (!API_BASE_URL) {
+  throw new Error("API_URL is not configured.");
+}
+
+const PROJECTS_API = `${API_BASE_URL}/api/projects`;
+const USERS_API = `${API_BASE_URL}/api/users`;
+const PROJECT_DOCUMENTS_API = `${API_BASE_URL}/api/project-documents`;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -170,7 +176,10 @@ const formatFileSize = (bytes) => {
   );
 
   return `${parseFloat(
-    (bytes / Math.pow(1024, index)).toFixed(2)
+    (
+      bytes /
+      Math.pow(1024, index)
+    ).toFixed(2)
   )} ${sizes[index]}`;
 };
 
@@ -192,9 +201,13 @@ const getFileIcon = (fileName) => {
     getFileExtension(fileName);
 
   if (
-    [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(
-      extension
-    )
+    [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".gif",
+    ].includes(extension)
   ) {
     return FileImage;
   }
@@ -1772,9 +1785,7 @@ const AdminProjects = () => {
             </div>
           )}
 
-          {/* =================================================
-              CREATE / EDIT MODAL
-          ================================================= */}
+          {/* CREATE / EDIT MODAL */}
 
           {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
@@ -2058,9 +2069,7 @@ const AdminProjects = () => {
                       </div>
                     </div>
 
-                    {/* =================================================
-                        ASSIGN USERS
-                    ================================================= */}
+                    {/* ASSIGN USERS */}
 
                     <div>
                       <div className="mb-3 flex items-start justify-between gap-4">
@@ -2317,9 +2326,7 @@ const AdminProjects = () => {
                       </p>
                     </div>
 
-                    {/* =================================================
-                        CREATE MODE - DOCUMENT UPLOAD
-                    ================================================= */}
+                    {/* CREATE MODE - DOCUMENT UPLOAD */}
 
                     {!editingProjectId && (
                       <div className="border-t border-slate-200 pt-6">
@@ -2517,9 +2524,7 @@ const AdminProjects = () => {
                       </div>
                     )}
 
-                    {/* =================================================
-                        EDIT MODE - EXISTING DOCUMENTS
-                    ================================================= */}
+                    {/* EDIT MODE - EXISTING DOCUMENTS */}
 
                     {editingProjectId && (
                       <div className="border-t border-slate-200 pt-6">
@@ -2553,9 +2558,7 @@ const AdminProjects = () => {
                     )}
                   </div>
 
-                  {/* =================================================
-                      FOOTER
-                  ================================================= */}
+                  {/* FOOTER */}
 
                   <div className="flex shrink-0 justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
                     <button
