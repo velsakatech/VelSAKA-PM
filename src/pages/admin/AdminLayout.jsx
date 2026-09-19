@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Loader2 } from "lucide-react";
 
-import AdminSidebar from "./AdminSideBar";
+import AdminSidebar from "./AdminSidebar";
 import { useAuth } from "../../context/AuthContext";
 
 const AdminLayout = ({ children, title, subtitle }) => {
