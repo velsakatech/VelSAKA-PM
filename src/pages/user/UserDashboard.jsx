@@ -18,9 +18,7 @@ import {
 import UserLayout from "./UserLayout";
 import { useAuth } from "../../context/AuthContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.API_URL;
 
 /* =========================================================
    API REQUEST
@@ -38,9 +36,7 @@ const apiRequest = async (endpoint, options = {}) => {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
-      data?.message || `Request failed: ${response.status}`
-    );
+    throw new Error(data?.message || `Request failed: ${response.status}`);
   }
 
   return data;
@@ -170,24 +166,19 @@ function UserDashboard() {
 
       setError("");
 
-      const [projectsResponse, tasksResponse] =
-        await Promise.all([
-          apiRequest(`/projects/user/${mongoUserId}`),
-          apiRequest(`/tasks/user/${mongoUserId}`),
-        ]);
+      const [projectsResponse, tasksResponse] = await Promise.all([
+        apiRequest(`/projects/user/${mongoUserId}`),
+        apiRequest(`/tasks/user/${mongoUserId}`),
+      ]);
 
       /* ---------------- PROJECTS ---------------- */
 
       const fetchedProjects =
         projectsResponse?.projects ||
-        (Array.isArray(projectsResponse)
-          ? projectsResponse
-          : []);
+        (Array.isArray(projectsResponse) ? projectsResponse : []);
 
       const sortedProjects = [...fetchedProjects].sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) -
-          new Date(a.createdAt || 0)
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
       );
 
       setProjects(sortedProjects);
@@ -196,14 +187,10 @@ function UserDashboard() {
 
       const fetchedTasks =
         tasksResponse?.tasks ||
-        (Array.isArray(tasksResponse)
-          ? tasksResponse
-          : []);
+        (Array.isArray(tasksResponse) ? tasksResponse : []);
 
       const sortedTasks = [...fetchedTasks].sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) -
-          new Date(a.createdAt || 0)
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
       );
 
       setTasks(sortedTasks);
@@ -214,10 +201,7 @@ function UserDashboard() {
     } catch (err) {
       console.error("User dashboard error:", err);
 
-      setError(
-        err?.message ||
-          "Unable to load dashboard information."
-      );
+      setError(err?.message || "Unable to load dashboard information.");
 
       if (!isRefresh) {
         setProjects([]);
@@ -241,9 +225,7 @@ function UserDashboard() {
     if (!mongoUserId) {
       setLoading(false);
 
-      setError(
-        "User information is unavailable. Please login again."
-      );
+      setError("User information is unavailable. Please login again.");
 
       return;
     }
@@ -258,18 +240,15 @@ function UserDashboard() {
   const totalProjects = projects.length;
 
   const pendingTasks = tasks.filter(
-    (task) => task.status !== "completed"
+    (task) => task.status !== "completed",
   ).length;
 
   const completedTasks = tasks.filter(
-    (task) => task.status === "completed"
+    (task) => task.status === "completed",
   ).length;
 
   const upcomingTasks = tasks.filter((task) => {
-    if (
-      !task.dueDate ||
-      task.status === "completed"
-    ) {
+    if (!task.dueDate || task.status === "completed") {
       return false;
     }
 
@@ -286,22 +265,13 @@ function UserDashboard() {
 
   const upcomingTaskList = [...tasks]
     .filter((task) => {
-      if (
-        !task.dueDate ||
-        task.status === "completed"
-      ) {
+      if (!task.dueDate || task.status === "completed") {
         return false;
       }
 
-      return (
-        new Date(task.dueDate) >= new Date()
-      );
+      return new Date(task.dueDate) >= new Date();
     })
-    .sort(
-      (a, b) =>
-        new Date(a.dueDate) -
-        new Date(b.dueDate)
-    )
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
     .slice(0, 5);
 
   /* =========================================================
@@ -347,11 +317,9 @@ function UserDashboard() {
 
   const userEmail = user?.email || "";
 
-  const userJobRole =
-    user?.jobRole || "Team Member";
+  const userJobRole = user?.jobRole || "Team Member";
 
-  const userDepartment =
-    user?.department || "—";
+  const userDepartment = user?.department || "—";
 
   /* =========================================================
      RENDER
@@ -361,7 +329,6 @@ function UserDashboard() {
     <UserLayout>
       <div className="min-h-screen bg-[#f7f8fc]">
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-
           {/* =================================================
               HEADER
           ================================================= */}
@@ -371,9 +338,7 @@ function UserDashboard() {
               <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-400">
                 <span>Workspace</span>
                 <span>/</span>
-                <span className="font-semibold text-slate-600">
-                  Dashboard
-                </span>
+                <span className="font-semibold text-slate-600">Dashboard</span>
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -393,14 +358,10 @@ function UserDashboard() {
             >
               <RefreshCw
                 size={15}
-                className={
-                  refreshing ? "animate-spin" : ""
-                }
+                className={refreshing ? "animate-spin" : ""}
               />
 
-              {refreshing
-                ? "Refreshing..."
-                : "Refresh"}
+              {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
@@ -420,9 +381,7 @@ function UserDashboard() {
                     Unable to load dashboard
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-red-600">
-                    {error}
-                  </p>
+                  <p className="mt-1 text-xs leading-5 text-red-600">{error}</p>
                 </div>
               </div>
 
@@ -467,10 +426,7 @@ function UserDashboard() {
                     <div
                       className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.iconBg}`}
                     >
-                      <Icon
-                        size={21}
-                        className={stat.iconColor}
-                      />
+                      <Icon size={21} className={stat.iconColor} />
                     </div>
                   </div>
                 </div>
@@ -483,7 +439,6 @@ function UserDashboard() {
           ================================================= */}
 
           <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-
             {/* ================= PROJECTS ================= */}
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -506,11 +461,7 @@ function UserDashboard() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate(
-                      "/user/dashboard/projects"
-                    )
-                  }
+                  onClick={() => navigate("/user/dashboard/projects")}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-slate-900"
                 >
                   View all
@@ -529,8 +480,7 @@ function UserDashboard() {
                   </p>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Projects assigned to you will
-                    appear here.
+                    Projects assigned to you will appear here.
                   </p>
                 </div>
               ) : (
@@ -554,8 +504,7 @@ function UserDashboard() {
                     </>
                   ) : (
                     projects.slice(0, 5).map((project) => {
-                      const status =
-                        project.status || "planning";
+                      const status = project.status || "planning";
 
                       return (
                         <button
@@ -564,8 +513,8 @@ function UserDashboard() {
                           onClick={() =>
                             navigate(
                               `/user/dashboard/projects?project=${getId(
-                                project
-                              )}`
+                                project,
+                              )}`,
                             )
                           }
                           className="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-slate-50 sm:px-6"
@@ -576,30 +525,22 @@ function UserDashboard() {
 
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-slate-800">
-                              {project.name ||
-                                "Untitled Project"}
+                              {project.name || "Untitled Project"}
                             </p>
 
                             <div className="mt-1 flex flex-wrap items-center gap-2">
                               <span
                                 className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${
-                                  projectStatusStyles[
-                                    status
-                                  ] ||
+                                  projectStatusStyles[status] ||
                                   projectStatusStyles.planning
                                 }`}
                               >
-                                {projectStatusLabels[
-                                  status
-                                ] || status}
+                                {projectStatusLabels[status] || status}
                               </span>
 
                               {project.dueDate && (
                                 <span className="text-[10px] text-slate-400">
-                                  Due{" "}
-                                  {formatDate(
-                                    project.dueDate
-                                  )}
+                                  Due {formatDate(project.dueDate)}
                                 </span>
                               )}
                             </div>
@@ -639,11 +580,7 @@ function UserDashboard() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate(
-                      "/user/dashboard/tasks"
-                    )
-                  }
+                  onClick={() => navigate("/user/dashboard/tasks")}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-slate-900"
                 >
                   View all
@@ -662,8 +599,7 @@ function UserDashboard() {
                   </p>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Tasks assigned to you will
-                    appear here.
+                    Tasks assigned to you will appear here.
                   </p>
                 </div>
               ) : (
@@ -689,21 +625,15 @@ function UserDashboard() {
                     </>
                   ) : (
                     recentTasks.map((task) => {
-                      const status =
-                        task.status || "todo";
+                      const status = task.status || "todo";
 
-                      const priority =
-                        task.priority || "medium";
+                      const priority = task.priority || "medium";
 
                       return (
                         <button
                           type="button"
                           key={getId(task)}
-                          onClick={() =>
-                            navigate(
-                              "/user/dashboard/tasks"
-                            )
-                          }
+                          onClick={() => navigate("/user/dashboard/tasks")}
                           className="flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-slate-50 sm:px-6"
                         >
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
@@ -713,15 +643,12 @@ function UserDashboard() {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="truncate text-sm font-semibold text-slate-800">
-                                {task.title ||
-                                  "Untitled Task"}
+                                {task.title || "Untitled Task"}
                               </p>
 
                               <span
                                 className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${
-                                  priorityStyles[
-                                    priority
-                                  ] ||
+                                  priorityStyles[priority] ||
                                   priorityStyles.medium
                                 }`}
                               >
@@ -733,17 +660,14 @@ function UserDashboard() {
                               <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
                                 <FolderKanban size={11} />
 
-                                {task.projectId?.name ||
-                                  "Unknown Project"}
+                                {task.projectId?.name || "Unknown Project"}
                               </span>
                             </div>
 
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <span
                                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
-                                  taskStatusStyles[
-                                    status
-                                  ] ||
+                                  taskStatusStyles[status] ||
                                   taskStatusStyles.todo
                                 }`}
                               >
@@ -753,18 +677,14 @@ function UserDashboard() {
                                   <Clock3 size={10} />
                                 )}
 
-                                {taskStatusLabels[
-                                  status
-                                ] || "To Do"}
+                                {taskStatusLabels[status] || "To Do"}
                               </span>
 
                               {task.dueDate && (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
                                   <CalendarDays size={10} />
 
-                                  {formatDate(
-                                    task.dueDate
-                                  )}
+                                  {formatDate(task.dueDate)}
                                 </span>
                               )}
                             </div>
@@ -824,11 +744,7 @@ function UserDashboard() {
                   <button
                     type="button"
                     key={getId(task)}
-                    onClick={() =>
-                      navigate(
-                        "/user/dashboard/tasks"
-                      )
-                    }
+                    onClick={() => navigate("/user/dashboard/tasks")}
                     className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-slate-50 sm:px-6"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -842,15 +758,12 @@ function UserDashboard() {
 
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="text-[10px] text-slate-400">
-                          {task.projectId?.name ||
-                            "Unknown Project"}
+                          {task.projectId?.name || "Unknown Project"}
                         </span>
 
                         <span
                           className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${
-                            priorityStyles[
-                              task.priority
-                            ] ||
+                            priorityStyles[task.priority] ||
                             priorityStyles.medium
                           }`}
                         >
@@ -890,7 +803,6 @@ function UserDashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
               {/* NAME */}
 
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -970,10 +882,8 @@ function UserDashboard() {
                   </div>
                 </div>
               </div>
-
             </div>
           </section>
-
         </div>
       </div>
     </UserLayout>

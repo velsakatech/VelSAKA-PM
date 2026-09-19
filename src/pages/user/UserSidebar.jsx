@@ -14,8 +14,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 
 const API_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000/api";
+  import.meta.env.API_URL;
 
 const NAV_ITEMS = [
   {

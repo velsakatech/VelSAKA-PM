@@ -29,9 +29,7 @@ import {
 import UserLayout from "./UserLayout";
 import { useAuth } from "../../context/AuthContext";
 
-const API_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000/api";
+const API_URL = import.meta.env.API_URL;
 
 const SERVER_URL = API_URL.replace(/\/api$/, "");
 

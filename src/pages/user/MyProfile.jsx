@@ -28,11 +28,6 @@ const GithubIcon = ({ size = 16 }) => (
 // GITHUB HELPERS
 // =========================================================
 
-// Extract just the username from either:
-//   "https://github.com/AbishekSathiyan/"
-//   "https://github.com/AbishekSathiyan"
-//   "AbishekSathiyan"
-//   "@AbishekSathiyan"
 const extractGithubUsername = (input) => {
   if (!input) return "";
 
@@ -46,6 +41,10 @@ const extractGithubUsername = (input) => {
   return value.replace(/^@/, "");
 };
 
+// =========================================================
+// COMPONENT
+// =========================================================
+
 const MyProfile = () => {
   const auth = useContext(AuthContext);
 
@@ -56,11 +55,23 @@ const MyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // =========================================================
+  // API URL
+  // =========================================================
+
+  const API_URL = import.meta.env.API_URL;
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
         setError("");
+
+        if (!API_URL) {
+          throw new Error(
+            "API URL is not configured. Please check the frontend environment variables.",
+          );
+        }
 
         let loggedInUser = authUser;
 
@@ -92,20 +103,24 @@ const MyProfile = () => {
 
         const normalizedEmail = email.toLowerCase().trim();
 
-        const response = await fetch(
-          `http://localhost:5000/api/users/profile/${encodeURIComponent(
-            normalizedEmail,
-          )}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
+        const profileUrl =
+          `${API_URL}/users/profile/${encodeURIComponent(normalizedEmail)}`;
+
+        console.log("USER PROFILE API:", profileUrl);
+
+        const response = await fetch(profileUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+        });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data?.message || "Failed to fetch user profile");
+          throw new Error(
+            data?.message || "Failed to fetch user profile",
+          );
         }
 
         if (!data?.user) {
@@ -113,49 +128,93 @@ const MyProfile = () => {
         }
 
         setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user),
+        );
       } catch (error) {
         console.error("Fetch profile error:", error);
-        setError(error?.message || "Failed to load user profile");
+
+        setError(
+          error?.message || "Failed to load user profile",
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    if (auth?.loading === true || auth?.authLoading === true) {
+    if (
+      auth?.loading === true ||
+      auth?.authLoading === true
+    ) {
       return;
     }
 
     fetchUserProfile();
-  }, [authUser, auth?.loading, auth?.authLoading]);
+  }, [
+    authUser,
+    auth?.loading,
+    auth?.authLoading,
+    API_URL,
+  ]);
+
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
-      <UserLayout title="My Profile" subtitle="Manage your account information">
+      <UserLayout
+        title="My Profile"
+        subtitle="Manage your account information"
+      >
         <div className="flex min-h-[300px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
-            <p className="text-sm text-slate-500">Loading profile...</p>
+
+            <p className="text-sm text-slate-500">
+              Loading profile...
+            </p>
           </div>
         </div>
       </UserLayout>
     );
   }
 
+  // =========================================================
+  // ERROR
+  // =========================================================
+
   if (error) {
     return (
-      <UserLayout title="My Profile" subtitle="Manage your account information">
+      <UserLayout
+        title="My Profile"
+        subtitle="Manage your account information"
+      >
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-          <h2 className="font-semibold text-red-700">Unable to load profile</h2>
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+          <h2 className="font-semibold text-red-700">
+            Unable to load profile
+          </h2>
+
+          <p className="mt-1 text-sm text-red-600">
+            {error}
+          </p>
         </div>
       </UserLayout>
     );
   }
 
+  // =========================================================
+  // EMPTY
+  // =========================================================
+
   if (!user) {
     return (
-      <UserLayout title="My Profile" subtitle="Manage your account information">
+      <UserLayout
+        title="My Profile"
+        subtitle="Manage your account information"
+      >
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
           <p className="text-sm text-slate-500">
             No profile information available.
@@ -168,10 +227,20 @@ const MyProfile = () => {
   const githubUrl = user?.githubUsername || "";
   const githubUsername = extractGithubUsername(githubUrl);
 
+  // =========================================================
+  // PROFILE UI
+  // =========================================================
+
   return (
-    <UserLayout title="My Profile" subtitle="Manage your account information">
+    <UserLayout
+      title="My Profile"
+      subtitle="Manage your account information"
+    >
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          My Profile
+        </h1>
+
         <p className="mt-1 text-sm text-slate-500">
           View your account information.
         </p>
@@ -187,6 +256,7 @@ const MyProfile = () => {
             <h2 className="truncate text-lg font-semibold text-slate-900">
               {user?.name || "-"}
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               {user?.jobRole || "-"}
             </p>
@@ -194,14 +264,37 @@ const MyProfile = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
-          <ProfileField label="Full Name" value={user?.name} />
-          <ProfileField label="Email" value={user?.email} />
-          <ProfileField label="Access Role" value={user?.accessRole} />
-          <ProfileField label="Job Role" value={user?.jobRole} />
-          <ProfileField label="Department" value={user?.department} />
-          <ProfileField label="Status" value={user?.status} />
+          <ProfileField
+            label="Full Name"
+            value={user?.name}
+          />
 
-          {/* 👇 GitHub — icon + username, clickable */}
+          <ProfileField
+            label="Email"
+            value={user?.email}
+          />
+
+          <ProfileField
+            label="Access Role"
+            value={user?.accessRole}
+          />
+
+          <ProfileField
+            label="Job Role"
+            value={user?.jobRole}
+          />
+
+          <ProfileField
+            label="Department"
+            value={user?.department}
+          />
+
+          <ProfileField
+            label="Status"
+            value={user?.status}
+          />
+
+          {/* GitHub */}
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
               GitHub Username
@@ -226,7 +319,9 @@ const MyProfile = () => {
                   </span>
                 </a>
               ) : (
-                <p className="text-sm font-medium text-slate-800">-</p>
+                <p className="text-sm font-medium text-slate-800">
+                  -
+                </p>
               )}
             </div>
           </div>
@@ -236,9 +331,14 @@ const MyProfile = () => {
   );
 };
 
+// =========================================================
+// PROFILE FIELD
+// =========================================================
+
 const ProfileField = ({ label, value }) => {
   const isStatus = label === "Status";
-  const isActive = String(value || "").toLowerCase() === "active";
+  const isActive =
+    String(value || "").toLowerCase() === "active";
 
   return (
     <div>
@@ -255,7 +355,9 @@ const ProfileField = ({ label, value }) => {
           />
         )}
 
-        <p className="text-sm font-medium text-slate-800">{value || "-"}</p>
+        <p className="text-sm font-medium text-slate-800">
+          {value || "-"}
+        </p>
       </div>
     </div>
   );
