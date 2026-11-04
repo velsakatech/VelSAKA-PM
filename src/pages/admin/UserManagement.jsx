@@ -22,9 +22,11 @@ import {
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
+import { apiRequest } from "../../lib/api";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api/users";
+/* =========================================================
+   CONSTANTS
+========================================================= */
 
 const ACCESS_ROLES = [
   { value: "admin", label: "Admin" },
@@ -72,9 +74,9 @@ const INITIAL_FORM = {
   status: "active",
 };
 
-// =========================================================
-// GITHUB ICON
-// =========================================================
+/* =========================================================
+   GITHUB ICON
+========================================================= */
 
 const GithubIcon = ({ size = 17 }) => (
   <svg
@@ -93,6 +95,10 @@ const GithubIcon = ({ size = 17 }) => (
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 const UserManagement = () => {
   const navigate = useNavigate();
@@ -119,26 +125,26 @@ const UserManagement = () => {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // =========================================================
-  // LOAD USERS
-  // =========================================================
+  /* =========================================================
+     LOAD USERS
+  ========================================================= */
 
   const loadUsers = async () => {
     try {
       setLoadingUsers(true);
       setError("");
 
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      const data = await apiRequest("/users");
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to load users");
-      }
+      // Backend may return { users: [...] } or just [...]
+      const list = Array.isArray(data)
+        ? data
+        : data.users || [];
 
-      setUsers(data.users || []);
-    } catch (error) {
-      console.error("Load users error:", error);
-      setError(error.message || "Unable to connect to the server");
+      setUsers(list);
+    } catch (err) {
+      console.error("Load users error:", err);
+      setError(err.message || "Unable to load users.");
     } finally {
       setLoadingUsers(false);
     }
@@ -148,22 +154,22 @@ const UserManagement = () => {
     loadUsers();
   }, []);
 
-  // =========================================================
-  // FORM CHANGE
-  // =========================================================
+  /* =========================================================
+     FORM CHANGE
+  ========================================================= */
 
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData((previous) => ({
-      ...previous,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
     }));
   };
 
-  // =========================================================
-  // OPEN CREATE MODAL
-  // =========================================================
+  /* =========================================================
+     OPEN CREATE MODAL
+  ========================================================= */
 
   const handleOpenCreateModal = () => {
     setEditingUserId(null);
@@ -174,9 +180,9 @@ const UserManagement = () => {
     setShowModal(true);
   };
 
-  // =========================================================
-  // OPEN EDIT MODAL
-  // =========================================================
+  /* =========================================================
+     OPEN EDIT MODAL
+  ========================================================= */
 
   const handleOpenEditModal = (user) => {
     setEditingUserId(user._id);
@@ -198,14 +204,12 @@ const UserManagement = () => {
     setShowModal(true);
   };
 
-  // =========================================================
-  // CLOSE MODAL
-  // =========================================================
+  /* =========================================================
+     CLOSE MODAL
+  ========================================================= */
 
   const handleCloseModal = () => {
-    if (loading || savingEdit) {
-      return;
-    }
+    if (loading || savingEdit) return;
 
     setShowModal(false);
     setEditingUserId(null);
@@ -214,17 +218,17 @@ const UserManagement = () => {
     setSuccess("");
   };
 
-  // =========================================================
-  // OPEN CHAT
-  // =========================================================
+  /* =========================================================
+     OPEN CHAT
+  ========================================================= */
 
   const handleOpenChat = (user) => {
     navigate(`/admin/chat/${user._id}`);
   };
 
-  // =========================================================
-  // CREATE USER
-  // =========================================================
+  /* =========================================================
+     CREATE USER
+  ========================================================= */
 
   const handleCreateUser = async (event) => {
     event.preventDefault();
@@ -252,11 +256,8 @@ const UserManagement = () => {
     try {
       setLoading(true);
 
-      const response = await fetch(API_URL, {
+      await apiRequest("/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
@@ -268,14 +269,7 @@ const UserManagement = () => {
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create user");
-      }
-
       setSuccess("User created successfully.");
-
       setFormData({ ...INITIAL_FORM });
 
       await loadUsers();
@@ -284,17 +278,17 @@ const UserManagement = () => {
         setShowModal(false);
         setSuccess("");
       }, 800);
-    } catch (error) {
-      console.error("Create user error:", error);
-      setError(error.message || "Failed to create user");
+    } catch (err) {
+      console.error("Create user error:", err);
+      setError(err.message || "Failed to create user.");
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================================================
-  // UPDATE USER
-  // =========================================================
+  /* =========================================================
+     UPDATE USER
+  ========================================================= */
 
   const handleUpdateUser = async (event) => {
     event.preventDefault();
@@ -322,11 +316,8 @@ const UserManagement = () => {
     try {
       setSavingEdit(true);
 
-      const response = await fetch(`${API_URL}/${editingUserId}`, {
+      await apiRequest(`/users/${editingUserId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
@@ -338,12 +329,6 @@ const UserManagement = () => {
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update user");
-      }
-
       setSuccess("User updated successfully.");
 
       await loadUsers();
@@ -353,41 +338,33 @@ const UserManagement = () => {
         setEditingUserId(null);
         setSuccess("");
       }, 800);
-    } catch (error) {
-      console.error("Update user error:", error);
-      setError(error.message || "Failed to update user");
+    } catch (err) {
+      console.error("Update user error:", err);
+      setError(err.message || "Failed to update user.");
     } finally {
       setSavingEdit(false);
     }
   };
 
-  // =========================================================
-  // DELETE USER
-  // =========================================================
+  /* =========================================================
+     DELETE USER
+  ========================================================= */
 
   const handleDeleteUser = async (user) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete ${user.name}?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       setDeletingUserId(user._id);
       setError("");
       setSuccess("");
 
-      const response = await fetch(`${API_URL}/${user._id}`, {
+      await apiRequest(`/users/${user._id}`, {
         method: "DELETE",
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to delete user");
-      }
 
       setSuccess("User deleted successfully.");
 
@@ -396,17 +373,17 @@ const UserManagement = () => {
       setTimeout(() => {
         setSuccess("");
       }, 2500);
-    } catch (error) {
-      console.error("Delete user error:", error);
-      setError(error.message || "Failed to delete user");
+    } catch (err) {
+      console.error("Delete user error:", err);
+      setError(err.message || "Failed to delete user.");
     } finally {
       setDeletingUserId(null);
     }
   };
 
-  // =========================================================
-  // FILTER USERS
-  // =========================================================
+  /* =========================================================
+     FILTER USERS
+  ========================================================= */
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -424,7 +401,8 @@ const UserManagement = () => {
         roleFilter === "all" || user.accessRole === roleFilter;
 
       const matchesDepartment =
-        departmentFilter === "all" || user.department === departmentFilter;
+        departmentFilter === "all" ||
+        user.department === departmentFilter;
 
       const matchesStatus =
         statusFilter === "all" || user.status === statusFilter;
@@ -436,17 +414,11 @@ const UserManagement = () => {
         matchesStatus
       );
     });
-  }, [
-    users,
-    searchTerm,
-    roleFilter,
-    departmentFilter,
-    statusFilter,
-  ]);
+  }, [users, searchTerm, roleFilter, departmentFilter, statusFilter]);
 
-  // =========================================================
-  // COUNTS
-  // =========================================================
+  /* =========================================================
+     COUNTS
+  ========================================================= */
 
   const totalUsers = users.length;
 
@@ -459,30 +431,26 @@ const UserManagement = () => {
   ).length;
 
   const departmentsCount = new Set(
-    users
-      .map((user) => user.department)
-      .filter(Boolean)
+    users.map((user) => user.department).filter(Boolean)
   ).size;
 
-  // =========================================================
-  // HELPERS
-  // =========================================================
+  /* =========================================================
+     HELPERS
+  ========================================================= */
 
-  const getRoleLabel = (role) => {
-    return role === "admin" ? "Admin" : "User";
-  };
+  const getRoleLabel = (role) =>
+    role === "admin" ? "Admin" : "User";
 
   const getStatusClass = (status) => {
     if (status === "active") {
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
     }
-
     return "bg-gray-100 text-gray-600 border-gray-200";
   };
 
-  // =========================================================
-  // PAGE
-  // =========================================================
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <AdminLayout
@@ -503,11 +471,12 @@ const UserManagement = () => {
               </div>
 
               <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
-                Users & Team
+                Users &amp; Team
               </h1>
 
               <p className="mt-1 text-sm text-gray-500">
-                Manage your VELSAKA TECH team members, roles and access.
+                Manage your VELSAKA TECH team members, roles and
+                access.
               </p>
             </div>
 
@@ -533,32 +502,33 @@ const UserManagement = () => {
           {/* ERROR */}
 
           {error && !showModal && (
-            <div className="mb-5 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              <AlertCircle size={18} />
-              <span>{error}</span>
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span className="flex-1">{error}</span>
+              <button
+                type="button"
+                onClick={() => setError("")}
+                className="shrink-0 text-red-500 hover:text-red-700"
+              >
+                <X size={16} />
+              </button>
             </div>
           )}
 
           {/* STATS */}
 
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">
-                    Total Users
-                  </p>
-
+                  <p className="text-sm text-gray-500">Total Users</p>
                   <p className="mt-2 text-2xl font-semibold text-gray-900">
                     {totalUsers}
                   </p>
-
                   <p className="mt-1 text-xs text-gray-400">
                     Team members
                   </p>
                 </div>
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <UsersIcon size={20} />
                 </div>
@@ -568,19 +538,14 @@ const UserManagement = () => {
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">
-                    Active Users
-                  </p>
-
+                  <p className="text-sm text-gray-500">Active Users</p>
                   <p className="mt-2 text-2xl font-semibold text-gray-900">
                     {activeUsers}
                   </p>
-
                   <p className="mt-1 text-xs text-gray-400">
                     Currently active
                   </p>
                 </div>
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                   <CheckCircle2 size={20} />
                 </div>
@@ -593,16 +558,13 @@ const UserManagement = () => {
                   <p className="text-sm text-gray-500">
                     Administrators
                   </p>
-
                   <p className="mt-2 text-2xl font-semibold text-gray-900">
                     {adminUsers}
                   </p>
-
                   <p className="mt-1 text-xs text-gray-400">
                     Admin access
                   </p>
                 </div>
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                   <ShieldCheck size={20} />
                 </div>
@@ -612,79 +574,57 @@ const UserManagement = () => {
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">
-                    Departments
-                  </p>
-
+                  <p className="text-sm text-gray-500">Departments</p>
                   <p className="mt-2 text-2xl font-semibold text-gray-900">
                     {departmentsCount}
                   </p>
-
                   <p className="mt-1 text-xs text-gray-400">
                     Active departments
                   </p>
                 </div>
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
                   <Building2 size={20} />
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* USERS CARD */}
 
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-
             {/* TOOLBAR */}
 
             <div className="border-b border-gray-200 p-4 sm:p-5">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-
                 <div className="relative w-full xl:max-w-md">
                   <Search
                     size={18}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
                   />
-
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(event) =>
-                      setSearchTerm(event.target.value)
-                    }
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search users..."
                     className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-100"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:flex">
-
                   {/* ROLE */}
-
                   <div className="relative">
                     <select
                       value={roleFilter}
-                      onChange={(event) =>
-                        setRoleFilter(event.target.value)
-                      }
+                      onChange={(e) => setRoleFilter(e.target.value)}
                       className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 xl:min-w-[145px]"
                     >
-                      <option value="all">
-                        All Roles
-                      </option>
-
+                      <option value="all">All Roles</option>
                       {ACCESS_ROLES.map((role) => (
-                        <option
-                          key={role.value}
-                          value={role.value}
-                        >
+                        <option key={role.value} value={role.value}>
                           {role.label}
                         </option>
                       ))}
                     </select>
-
                     <ChevronDown
                       size={16}
                       className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -692,29 +632,21 @@ const UserManagement = () => {
                   </div>
 
                   {/* DEPARTMENT */}
-
                   <div className="relative">
                     <select
                       value={departmentFilter}
-                      onChange={(event) =>
-                        setDepartmentFilter(event.target.value)
+                      onChange={(e) =>
+                        setDepartmentFilter(e.target.value)
                       }
                       className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 xl:min-w-[160px]"
                     >
-                      <option value="all">
-                        All Departments
-                      </option>
-
+                      <option value="all">All Departments</option>
                       {DEPARTMENTS.map((department) => (
-                        <option
-                          key={department}
-                          value={department}
-                        >
+                        <option key={department} value={department}>
                           {department}
                         </option>
                       ))}
                     </select>
-
                     <ChevronDown
                       size={16}
                       className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -722,35 +654,26 @@ const UserManagement = () => {
                   </div>
 
                   {/* STATUS */}
-
                   <div className="relative">
                     <select
                       value={statusFilter}
-                      onChange={(event) =>
-                        setStatusFilter(event.target.value)
+                      onChange={(e) =>
+                        setStatusFilter(e.target.value)
                       }
                       className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 xl:min-w-[140px]"
                     >
-                      <option value="all">
-                        All Status
-                      </option>
-
+                      <option value="all">All Status</option>
                       {STATUS_OPTIONS.map((status) => (
-                        <option
-                          key={status.value}
-                          value={status.value}
-                        >
+                        <option key={status.value} value={status.value}>
                           {status.label}
                         </option>
                       ))}
                     </select>
-
                     <ChevronDown
                       size={16}
                       className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                   </div>
-
                 </div>
               </div>
             </div>
@@ -758,20 +681,15 @@ const UserManagement = () => {
             {/* TABLE */}
 
             <div className="overflow-x-auto">
-
               {loadingUsers ? (
                 <div className="flex min-h-[350px] items-center justify-center">
                   <div className="flex items-center gap-3 text-sm text-gray-500">
-                    <Loader2
-                      size={20}
-                      className="animate-spin"
-                    />
+                    <Loader2 size={20} className="animate-spin" />
                     Loading users...
                   </div>
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="flex min-h-[350px] flex-col items-center justify-center px-6 text-center">
-
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-500">
                     <UsersIcon size={25} />
                   </div>
@@ -796,79 +714,60 @@ const UserManagement = () => {
                       Add User
                     </button>
                   )}
-
                 </div>
               ) : (
                 <table className="min-w-[1100px] w-full">
-
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50/70">
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         User
                       </th>
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Access
                       </th>
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Job Role
                       </th>
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Department
                       </th>
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         GitHub
                       </th>
-
                       <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Status
                       </th>
-
                       <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                         Actions
                       </th>
-
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-100">
-
                     {filteredUsers.map((user) => (
                       <tr
                         key={user._id}
                         className="transition hover:bg-gray-50/70"
                       >
-
                         {/* USER */}
-
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                              {user.name
-                                ?.charAt(0)
-                                ?.toUpperCase() || "U"}
+                              {user.name?.charAt(0)?.toUpperCase() ||
+                                "U"}
                             </div>
-
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-gray-900">
                                 {user.name}
                               </p>
-
                               <p className="truncate text-xs text-gray-500">
                                 {user.email}
                               </p>
                             </div>
-
                           </div>
                         </td>
 
                         {/* ACCESS */}
-
                         <td className="px-5 py-4">
                           <span
                             className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-medium ${
@@ -882,7 +781,6 @@ const UserManagement = () => {
                         </td>
 
                         {/* JOB ROLE */}
-
                         <td className="px-5 py-4">
                           <p className="text-sm text-gray-700">
                             {user.jobRole || "—"}
@@ -890,7 +788,6 @@ const UserManagement = () => {
                         </td>
 
                         {/* DEPARTMENT */}
-
                         <td className="px-5 py-4">
                           <span className="text-sm text-gray-700">
                             {user.department || "—"}
@@ -898,7 +795,6 @@ const UserManagement = () => {
                         </td>
 
                         {/* GITHUB */}
-
                         <td className="px-5 py-4">
                           {user.githubUsername ? (
                             <a
@@ -918,7 +814,6 @@ const UserManagement = () => {
                         </td>
 
                         {/* STATUS */}
-
                         <td className="px-5 py-4">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${getStatusClass(
@@ -932,7 +827,6 @@ const UserManagement = () => {
                                   : "bg-gray-400"
                               }`}
                             />
-
                             {user.status === "active"
                               ? "Active"
                               : "Inactive"}
@@ -940,50 +834,32 @@ const UserManagement = () => {
                         </td>
 
                         {/* ACTIONS */}
-
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-
-                            {/* CHAT */}
-
                             <button
                               type="button"
                               onClick={() => handleOpenChat(user)}
-                              disabled={
-                                deletingUserId === user._id
-                              }
+                              disabled={deletingUserId === user._id}
                               title={`Chat with ${user.name}`}
                               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <MessageCircle size={17} />
                             </button>
 
-                            {/* EDIT */}
-
                             <button
                               type="button"
-                              onClick={() =>
-                                handleOpenEditModal(user)
-                              }
-                              disabled={
-                                deletingUserId === user._id
-                              }
+                              onClick={() => handleOpenEditModal(user)}
+                              disabled={deletingUserId === user._id}
                               title="Edit user"
                               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <Pencil size={17} />
                             </button>
 
-                            {/* DELETE */}
-
                             <button
                               type="button"
-                              onClick={() =>
-                                handleDeleteUser(user)
-                              }
-                              disabled={
-                                deletingUserId === user._id
-                              }
+                              onClick={() => handleDeleteUser(user)}
+                              disabled={deletingUserId === user._id}
                               title="Delete user"
                               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                             >
@@ -997,8 +873,6 @@ const UserManagement = () => {
                               )}
                             </button>
 
-                            {/* MORE */}
-
                             <button
                               type="button"
                               title="More options"
@@ -1006,17 +880,13 @@ const UserManagement = () => {
                             >
                               <MoreHorizontal size={17} />
                             </button>
-
                           </div>
                         </td>
-
                       </tr>
                     ))}
-
                   </tbody>
                 </table>
               )}
-
             </div>
 
             {/* FOOTER */}
@@ -1036,7 +906,6 @@ const UserManagement = () => {
                 </p>
               </div>
             )}
-
           </div>
         </div>
 
@@ -1044,15 +913,11 @@ const UserManagement = () => {
 
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
-
             <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-
               {/* MODAL HEADER */}
 
               <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
-
                 <div className="flex items-center gap-3">
-
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900 text-white">
                     {editingUserId ? (
                       <Pencil size={18} />
@@ -1063,18 +928,14 @@ const UserManagement = () => {
 
                   <div>
                     <h2 className="text-base font-semibold text-gray-900">
-                      {editingUserId
-                        ? "Edit User"
-                        : "Create User"}
+                      {editingUserId ? "Edit User" : "Create User"}
                     </h2>
-
                     <p className="mt-0.5 text-xs text-gray-500">
                       {editingUserId
                         ? "Update team member information."
                         : "Add a new VELSAKA team member."}
                     </p>
                   </div>
-
                 </div>
 
                 <button
@@ -1085,13 +946,11 @@ const UserManagement = () => {
                 >
                   <X size={19} />
                 </button>
-
               </div>
 
               {/* MODAL CONTENT */}
 
               <div className="overflow-y-auto px-5 py-5 sm:px-6">
-
                 {error && (
                   <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     <AlertCircle
@@ -1114,25 +973,17 @@ const UserManagement = () => {
 
                 <form
                   onSubmit={
-                    editingUserId
-                      ? handleUpdateUser
-                      : handleCreateUser
+                    editingUserId ? handleUpdateUser : handleCreateUser
                   }
                   id="user-form"
                 >
-
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
                     {/* NAME */}
-
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         Full Name
-                        <span className="ml-1 text-red-500">
-                          *
-                        </span>
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
-
                       <input
                         type="text"
                         name="name"
@@ -1145,15 +996,11 @@ const UserManagement = () => {
                     </div>
 
                     {/* EMAIL */}
-
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         Email Address
-                        <span className="ml-1 text-red-500">
-                          *
-                        </span>
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
-
                       <input
                         type="email"
                         name="email"
@@ -1165,26 +1012,17 @@ const UserManagement = () => {
                       />
                     </div>
 
-                    {/* PASSWORD */}
-
+                    {/* PASSWORD (create only) */}
                     {!editingUserId && (
                       <div className="sm:col-span-2">
-
                         <label className="mb-1.5 block text-sm font-medium text-gray-700">
                           Password
-                          <span className="ml-1 text-red-500">
-                            *
-                          </span>
+                          <span className="ml-1 text-red-500">*</span>
                         </label>
 
                         <div className="relative">
-
                           <input
-                            type={
-                              showPassword
-                                ? "text"
-                                : "password"
-                            }
+                            type={showPassword ? "text" : "password"}
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
@@ -1192,13 +1030,10 @@ const UserManagement = () => {
                             disabled={loading}
                             className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 pr-11 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:bg-gray-50"
                           />
-
                           <button
                             type="button"
                             onClick={() =>
-                              setShowPassword(
-                                (value) => !value
-                              )
+                              setShowPassword((v) => !v)
                             }
                             className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700"
                           >
@@ -1208,25 +1043,19 @@ const UserManagement = () => {
                               <Eye size={17} />
                             )}
                           </button>
-
                         </div>
 
                         <p className="mt-1.5 text-xs text-gray-400">
-                          This password will be used for Firebase
-                          login.
+                          This password will be used for Firebase login.
                         </p>
-
                       </div>
                     )}
 
                     {/* GITHUB USERNAME */}
-
                     <div className="sm:col-span-2">
-
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         GitHub Username
                       </label>
-
                       <input
                         type="text"
                         name="githubUsername"
@@ -1236,26 +1065,18 @@ const UserManagement = () => {
                         disabled={loading || savingEdit}
                         className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:bg-gray-50"
                       />
-
                       <p className="mt-1.5 text-xs text-gray-400">
                         Used for GitHub repository collaboration.
                       </p>
-
                     </div>
 
                     {/* ACCESS ROLE */}
-
                     <div>
-
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         Access Role
-                        <span className="ml-1 text-red-500">
-                          *
-                        </span>
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
-
                       <div className="relative">
-
                         <select
                           name="accessRole"
                           value={formData.accessRole}
@@ -1264,36 +1085,25 @@ const UserManagement = () => {
                           className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-3.5 pr-10 text-sm text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:bg-gray-50"
                         >
                           {ACCESS_ROLES.map((role) => (
-                            <option
-                              key={role.value}
-                              value={role.value}
-                            >
+                            <option key={role.value} value={role.value}>
                               {role.label}
                             </option>
                           ))}
                         </select>
-
                         <ChevronDown
                           size={16}
                           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                         />
-
                       </div>
                     </div>
 
                     {/* JOB ROLE */}
-
                     <div>
-
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         Job Role
-                        <span className="ml-1 text-red-500">
-                          *
-                        </span>
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
-
                       <div className="relative">
-
                         <select
                           name="jobRole"
                           value={formData.jobRole}
@@ -1301,41 +1111,27 @@ const UserManagement = () => {
                           disabled={loading || savingEdit}
                           className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-3.5 pr-10 text-sm text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:bg-gray-50"
                         >
-                          <option value="">
-                            Select job role
-                          </option>
-
+                          <option value="">Select job role</option>
                           {JOB_ROLES.map((jobRole) => (
-                            <option
-                              key={jobRole}
-                              value={jobRole}
-                            >
+                            <option key={jobRole} value={jobRole}>
                               {jobRole}
                             </option>
                           ))}
                         </select>
-
                         <ChevronDown
                           size={16}
                           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                         />
-
                       </div>
                     </div>
 
                     {/* DEPARTMENT */}
-
                     <div>
-
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">
                         Department
-                        <span className="ml-1 text-red-500">
-                          *
-                        </span>
+                        <span className="ml-1 text-red-500">*</span>
                       </label>
-
                       <div className="relative">
-
                         <select
                           name="department"
                           value={formData.department}
@@ -1343,10 +1139,7 @@ const UserManagement = () => {
                           disabled={loading || savingEdit}
                           className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white px-3.5 pr-10 text-sm text-gray-900 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 disabled:bg-gray-50"
                         >
-                          <option value="">
-                            Select department
-                          </option>
-
+                          <option value="">Select department</option>
                           {DEPARTMENTS.map((department) => (
                             <option
                               key={department}
@@ -1356,29 +1149,21 @@ const UserManagement = () => {
                             </option>
                           ))}
                         </select>
-
                         <ChevronDown
                           size={16}
                           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                         />
-
                       </div>
                     </div>
 
-                    {/* STATUS */}
-
+                    {/* STATUS (edit only) */}
                     {editingUserId && (
                       <div>
-
                         <label className="mb-1.5 block text-sm font-medium text-gray-700">
                           Status
-                          <span className="ml-1 text-red-500">
-                            *
-                          </span>
+                          <span className="ml-1 text-red-500">*</span>
                         </label>
-
                         <div className="relative">
-
                           <select
                             name="status"
                             value={formData.status}
@@ -1395,37 +1180,29 @@ const UserManagement = () => {
                               </option>
                             ))}
                           </select>
-
                           <ChevronDown
                             size={16}
                             className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                           />
-
                         </div>
                       </div>
                     )}
-
                   </div>
-
-                  {/* EDIT INFO */}
 
                   {editingUserId && (
                     <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
                       <p className="text-xs leading-5 text-blue-700">
-                        Password is not changed from this screen.
-                        The existing Firebase password remains
-                        unchanged.
+                        Password is not changed from this screen. The
+                        existing Firebase password remains unchanged.
                       </p>
                     </div>
                   )}
-
                 </form>
               </div>
 
               {/* MODAL FOOTER */}
 
               <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50/50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -1443,14 +1220,8 @@ const UserManagement = () => {
                 >
                   {loading || savingEdit ? (
                     <>
-                      <Loader2
-                        size={17}
-                        className="animate-spin"
-                      />
-
-                      {editingUserId
-                        ? "Updating..."
-                        : "Creating..."}
+                      <Loader2 size={17} className="animate-spin" />
+                      {editingUserId ? "Updating..." : "Creating..."}
                     </>
                   ) : (
                     <>
@@ -1459,20 +1230,14 @@ const UserManagement = () => {
                       ) : (
                         <UserPlus size={17} />
                       )}
-
-                      {editingUserId
-                        ? "Update User"
-                        : "Create User"}
+                      {editingUserId ? "Update User" : "Create User"}
                     </>
                   )}
                 </button>
-
               </div>
-
             </div>
           </div>
         )}
-
       </div>
     </AdminLayout>
   );

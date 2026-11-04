@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
-
+import { apiRequest } from "../../lib/api";
 /*
 |--------------------------------------------------------------------------
 | Production API Configuration
