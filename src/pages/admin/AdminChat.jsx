@@ -30,11 +30,12 @@ import { useAuth } from "../../context/AuthContext";
 
 import socket from "../../socket/socket";
 
-const USERS_API_URL =
-  "http://localhost:5000/api/users";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const CHAT_API_URL =
-  "http://localhost:5000/api/chat";
+const USERS_API_URL = `${API_BASE_URL}/users`;
+
+const CHAT_API_URL = `${API_BASE_URL}/chat`;
+
 
 const AdminChat = () => {
   const { userId } = useParams();

@@ -11,8 +11,11 @@ import {
   Clock,
 } from "lucide-react";
 
-const API_URL = "http://localhost:5000/api/github";
-const USERS_API = "http://localhost:5000/api/users";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+const API_URL = `${API_BASE_URL}/github`;
+const USERS_API = `${API_BASE_URL}/users`;
+
 
 const PERMISSION_OPTIONS = [
   { value: "pull", label: "Read" },
