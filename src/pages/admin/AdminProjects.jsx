@@ -31,17 +31,18 @@ import ProjectDocuments from "./ProjectDocuments";
 // PRODUCTION API
 // =========================================================
 
-const API_BASE_URL = import.meta.env.API_URL?.trim().replace(/\/+$/, "");
+const API_BASE_URL = (import.meta.env.API_URL || "")
+  .trim()
+  .replace(/\/+$/, "");
 
-if (!API_BASE_URL) {
-  throw new Error("API_URL is not configured.");
-}
+const API_URL = `${API_BASE_URL}/api`;
 
-const PROJECTS_API = `${API_BASE_URL}/projects`;
-const USERS_API = `${API_BASE_URL}/users`;
-const PROJECT_DOCUMENTS_API = `${API_BASE_URL}/project-documents`;
+const PROJECTS_API = `${API_URL}/projects`;
+const USERS_API = `${API_URL}/users`;
+const PROJECT_DOCUMENTS_API = `${API_URL}/project-documents`;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 
 const ALLOWED_EXTENSIONS = [
   ".pdf",
