@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -12,10 +13,13 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Building2,
   UserCircle,
 } from "lucide-react";
 
+// VELSAKA branding
+const VELSAKA_LOGO = "/VelSAKA_Logo.jpeg";
+
+// Primary navigation
 const navigation = [
   {
     label: "Dashboard",
@@ -39,6 +43,7 @@ const navigation = [
   },
 ];
 
+// Secondary navigation
 const secondaryNavigation = [
   {
     label: "Settings",
@@ -53,26 +58,30 @@ export default function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Logout
   const handleLogout = () => {
-    // Add Firebase/Auth logout here later.
-    navigate("/login");
+    // Connect your Firebase logout function here.
+    navigate("/login", { replace: true });
   };
 
+  // Close mobile sidebar
   const closeMobileSidebar = () => {
     setMobileOpen(false);
   };
 
   return (
     <>
-      {/* =====================================================
-          MOBILE TOP BAR
-      ===================================================== */}
-
+      {/* MOBILE TOP BAR */}
       <div className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-            <Building2 size={18} />
-          </div>
+          <img
+            src={VELSAKA_LOGO}
+            alt="VELSAKA Logo"
+            className="h-9 w-9 rounded-xl object-contain"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
 
           <div>
             <p className="text-sm font-bold tracking-tight text-slate-900">
@@ -95,10 +104,7 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      {/* =====================================================
-          MOBILE OVERLAY
-      ===================================================== */}
-
+      {/* MOBILE OVERLAY */}
       {mobileOpen && (
         <button
           type="button"
@@ -108,22 +114,13 @@ export default function AdminSidebar() {
         />
       )}
 
-      {/* =====================================================
-          SIDEBAR
-      ===================================================== */}
-
+      {/* SIDEBAR */}
       <aside
         className={`
           fixed left-0 top-0 z-50 flex h-screen flex-col
           border-r border-slate-200 bg-white
           transition-all duration-300 ease-in-out
-
-          ${
-            collapsed
-              ? "w-[76px]"
-              : "w-[250px]"
-          }
-
+          ${collapsed ? "w-[76px]" : "w-[250px]"}
           ${
             mobileOpen
               ? "translate-x-0"
@@ -131,24 +128,22 @@ export default function AdminSidebar() {
           }
         `}
       >
-        {/* =================================================
-            BRAND
-        ================================================= */}
-
+        {/* BRAND */}
         <div
           className={`
             flex h-20 shrink-0 items-center border-b border-slate-100
-            ${
-              collapsed
-                ? "justify-center px-3"
-                : "justify-between px-5"
-            }
+            ${collapsed ? "justify-center px-3" : "justify-between px-5"}
           `}
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-              <Building2 size={19} />
-            </div>
+            <img
+              src={VELSAKA_LOGO}
+              alt="VELSAKA Logo"
+              className="h-10 w-10 shrink-0 rounded-xl object-contain"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
 
             {!collapsed && (
               <div className="min-w-0">
@@ -163,8 +158,7 @@ export default function AdminSidebar() {
             )}
           </div>
 
-          {/* Mobile Close */}
-
+          {/* MOBILE CLOSE */}
           <button
             type="button"
             onClick={closeMobileSidebar}
@@ -175,10 +169,7 @@ export default function AdminSidebar() {
           </button>
         </div>
 
-        {/* =================================================
-            WORKSPACE LABEL
-        ================================================= */}
-
+        {/* WORKSPACE LABEL */}
         {!collapsed && (
           <div className="px-5 pb-2 pt-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
@@ -187,10 +178,7 @@ export default function AdminSidebar() {
           </div>
         )}
 
-        {/* =================================================
-            PRIMARY NAVIGATION
-        ================================================= */}
-
+        {/* PRIMARY NAVIGATION */}
         <nav className="flex-1 overflow-y-auto px-3 py-2">
           <div className="space-y-1">
             {navigation.map((item) => {
@@ -207,13 +195,7 @@ export default function AdminSidebar() {
                     `
                     group relative flex h-11 items-center rounded-xl
                     text-sm font-medium transition-all duration-200
-
-                    ${
-                      collapsed
-                        ? "justify-center px-2"
-                        : "gap-3 px-3"
-                    }
-
+                    ${collapsed ? "justify-center px-2" : "gap-3 px-3"}
                     ${
                       isActive
                         ? "bg-slate-900 text-white shadow-sm"
@@ -231,12 +213,8 @@ export default function AdminSidebar() {
                       />
 
                       {!collapsed && (
-                        <span className="truncate">
-                          {item.label}
-                        </span>
+                        <span className="truncate">{item.label}</span>
                       )}
-
-                      {/* Active indicator */}
 
                       {isActive && !collapsed && (
                         <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />
@@ -248,10 +226,7 @@ export default function AdminSidebar() {
             })}
           </div>
 
-          {/* =================================================
-              SECONDARY
-          ================================================= */}
-
+          {/* SECONDARY NAVIGATION */}
           <div className="my-5 border-t border-slate-100" />
 
           {!collapsed && (
@@ -274,13 +249,7 @@ export default function AdminSidebar() {
                     `
                     flex h-11 items-center rounded-xl
                     text-sm font-medium transition-all duration-200
-
-                    ${
-                      collapsed
-                        ? "justify-center px-2"
-                        : "gap-3 px-3"
-                    }
-
+                    ${collapsed ? "justify-center px-2" : "gap-3 px-3"}
                     ${
                       isActive
                         ? "bg-slate-900 text-white shadow-sm"
@@ -291,28 +260,19 @@ export default function AdminSidebar() {
                 >
                   <Icon size={19} />
 
-                  {!collapsed && (
-                    <span>{item.label}</span>
-                  )}
+                  {!collapsed && <span>{item.label}</span>}
                 </NavLink>
               );
             })}
           </div>
         </nav>
 
-        {/* =================================================
-            USER AREA
-        ================================================= */}
-
+        {/* USER AREA */}
         <div className="border-t border-slate-100 p-3">
           <div
             className={`
               mb-2 flex items-center rounded-xl bg-slate-50
-              ${
-                collapsed
-                  ? "justify-center p-2"
-                  : "gap-3 px-3 py-2.5"
-              }
+              ${collapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5"}
             `}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
@@ -322,7 +282,7 @@ export default function AdminSidebar() {
             {!collapsed && (
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-slate-800">
-                  Company Admin
+                  VELSAKA Admin
                 </p>
 
                 <p className="truncate text-[10px] text-slate-400">
@@ -332,8 +292,7 @@ export default function AdminSidebar() {
             )}
           </div>
 
-          {/* Logout */}
-
+          {/* LOGOUT */}
           <button
             type="button"
             onClick={handleLogout}
@@ -342,12 +301,7 @@ export default function AdminSidebar() {
               flex h-10 w-full items-center rounded-xl
               text-sm font-medium text-slate-500
               transition hover:bg-red-50 hover:text-red-600
-
-              ${
-                collapsed
-                  ? "justify-center"
-                  : "gap-3 px-3"
-              }
+              ${collapsed ? "justify-center" : "gap-3 px-3"}
             `}
           >
             <LogOut size={18} />
@@ -356,15 +310,13 @@ export default function AdminSidebar() {
           </button>
         </div>
 
-        {/* =================================================
-            COLLAPSE BUTTON
-        ================================================= */}
-
+        {/* COLLAPSE BUTTON */}
         <button
           type="button"
           onClick={() => setCollapsed((value) => !value)}
           className="absolute -right-3 top-[72px] hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 lg:flex"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <ChevronRight size={15} />
@@ -374,21 +326,11 @@ export default function AdminSidebar() {
         </button>
       </aside>
 
-      {/* =====================================================
-          DESKTOP CONTENT SPACER
-
-          This ensures page content does not sit underneath
-          the fixed sidebar.
-      ===================================================== */}
-
+      {/* DESKTOP CONTENT SPACER */}
       <div
         className={`
           hidden shrink-0 transition-all duration-300 lg:block
-          ${
-            collapsed
-              ? "w-[76px]"
-              : "w-[250px]"
-          }
+          ${collapsed ? "w-[76px]" : "w-[250px]"}
         `}
       />
     </>

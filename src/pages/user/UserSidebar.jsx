@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
@@ -13,8 +14,27 @@ import {
 
 import { useAuth } from "../../context/AuthContext";
 
-const API_URL =
-  import.meta.env.API_URL;
+// =====================================================
+// API CONFIGURATION
+// =====================================================
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:5000/api"
+    : "https://velsaka-pm-server.onrender.com/api")
+)
+  .trim()
+  .replace(/\/+$/, "");
+
+const NOTIFICATIONS_API = `${API_BASE_URL}/notifications`;
+
+// Logo stored inside the public directory
+const VELSAKA_LOGO = "/VelSAKA_Logo.jpeg";
+
+// =====================================================
+// NAVIGATION ITEMS
+// =====================================================
 
 const NAV_ITEMS = [
   {
@@ -49,6 +69,10 @@ const NAV_ITEMS = [
   },
 ];
 
+// =====================================================
+// USER SIDEBAR
+// =====================================================
+
 const UserSidebar = ({ open, onClose }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -56,6 +80,10 @@ const UserSidebar = ({ open, onClose }) => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const userId = user?._id || user?.id || user?.uid;
+
+  // ===================================================
+  // FETCH UNREAD NOTIFICATION COUNT
+  // ===================================================
 
   const fetchUnreadCount = useCallback(async () => {
     if (!userId) {
@@ -65,7 +93,7 @@ const UserSidebar = ({ open, onClose }) => {
 
     try {
       const response = await fetch(
-        `${API_URL}/notifications/${userId}/unread-count`
+        `${NOTIFICATIONS_API}/${userId}/unread-count`
       );
 
       const data = await response.json();
@@ -76,34 +104,43 @@ const UserSidebar = ({ open, onClose }) => {
         );
       }
 
-      setUnreadCount(data.count || 0);
+      setUnreadCount(Number(data.count) || 0);
     } catch (error) {
-      console.error(
-        "Fetch notification count error:",
-        error
-      );
+      console.error("Fetch notification count error:", error);
     }
   }, [userId]);
+
+  // ===================================================
+  // AUTO REFRESH
+  // ===================================================
 
   useEffect(() => {
     fetchUnreadCount();
 
-    // Refresh notification count every 30 seconds
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 30000);
+    const interval = setInterval(fetchUnreadCount, 30000);
 
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
+  // ===================================================
+  // LOGOUT
+  // ===================================================
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate("/login", { replace: true });
+    }
   };
+
+  // ===================================================
+  // UI
+  // ===================================================
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile Overlay */}
       {open && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -114,22 +151,28 @@ const UserSidebar = ({ open, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen w-64 bg-white border-r border-slate-200
-          flex flex-col
+          fixed top-0 left-0 z-50
+          flex h-screen w-64 flex-col
+          border-r border-slate-200 bg-white
           transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
         `}
       >
-        {/* Header */}
-        <div className="h-20 flex items-center justify-between px-5 border-b border-slate-200">
+        {/* Header / Brand */}
+        <div className="flex h-20 items-center justify-between border-b border-slate-200 px-5">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
-              V
-            </div>
+            <img
+              src={VELSAKA_LOGO}
+              alt="VELSAKA Logo"
+              className="h-10 w-10 rounded-xl object-contain"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
 
             <div>
-              <p className="text-sm font-bold text-slate-900">
+              <p className="text-sm font-bold tracking-wide text-slate-900">
                 VELSAKA
               </p>
 
@@ -142,15 +185,15 @@ const UserSidebar = ({ open, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
+            className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 lg:hidden"
             aria-label="Close sidebar"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
 
@@ -165,8 +208,9 @@ const UserSidebar = ({ open, onClose }) => {
                 onClick={onClose}
                 className={({ isActive }) =>
                   `
-                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                    transition
+                    flex items-center gap-3
+                    rounded-xl px-3 py-2.5
+                    text-sm font-medium transition
                     ${
                       isActive
                         ? "bg-slate-900 text-white"
@@ -184,13 +228,9 @@ const UserSidebar = ({ open, onClose }) => {
                 {isNotificationItem && unreadCount > 0 && (
                   <span
                     className="
-                      min-w-[20px] h-5 px-1.5
-                      rounded-full
-                      bg-red-500
-                      text-white
-                      text-[10px]
-                      font-bold
-                      flex items-center justify-center
+                      flex h-5 min-w-[20px] items-center justify-center
+                      rounded-full bg-red-500 px-1.5
+                      text-[10px] font-bold text-white
                     "
                   >
                     {unreadCount > 99 ? "99+" : unreadCount}
@@ -201,19 +241,19 @@ const UserSidebar = ({ open, onClose }) => {
           })}
         </nav>
 
-        {/* User footer */}
+        {/* User Footer */}
         <div className="border-t border-slate-200 p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-semibold">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
 
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
+              <p className="truncate text-sm font-semibold text-slate-900">
                 {user?.name || "User"}
               </p>
 
-              <p className="text-xs text-slate-400 truncate">
+              <p className="truncate text-xs text-slate-400">
                 {user?.email || ""}
               </p>
             </div>
@@ -223,16 +263,13 @@ const UserSidebar = ({ open, onClose }) => {
             type="button"
             onClick={handleLogout}
             className="
-              w-full flex items-center gap-3
-              px-3 py-2.5 rounded-xl
-              text-sm font-medium
-              text-red-600
-              hover:bg-red-50
-              transition
+              flex w-full items-center gap-3
+              rounded-xl px-3 py-2.5
+              text-sm font-medium text-red-600
+              transition hover:bg-red-50
             "
           >
             <LogOut size={18} />
-
             <span>Logout</span>
           </button>
         </div>
