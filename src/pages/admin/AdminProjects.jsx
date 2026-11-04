@@ -37,9 +37,9 @@ if (!API_BASE_URL) {
   throw new Error("API_URL is not configured.");
 }
 
-const PROJECTS_API = `${API_BASE_URL}/api/projects`;
-const USERS_API = `${API_BASE_URL}/api/users`;
-const PROJECT_DOCUMENTS_API = `${API_BASE_URL}/api/project-documents`;
+const PROJECTS_API = `${API_BASE_URL}/projects`;
+const USERS_API = `${API_BASE_URL}/users`;
+const PROJECT_DOCUMENTS_API = `${API_BASE_URL}/project-documents`;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 

@@ -26,9 +26,23 @@ import AdminSidebar from "./AdminSidebar";
 |--------------------------------------------------------------------------
 */
 
-const API_BASE_URL = import.meta.env.API_URL
-  ? import.meta.env.API_URL.trim().replace(/\/+$/, "")
-  : "";
+
+/*
+|--------------------------------------------------------------------------
+| API Configuration
+|--------------------------------------------------------------------------
+| Supports both:
+| API_URL=http://localhost:5000
+| API_URL=http://localhost:5000/api
+|
+| All API requests use exactly one /api prefix.
+|--------------------------------------------------------------------------
+*/
+
+const API_BASE_URL = (import.meta.env.API_URL || "")
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
 const apiRequest = async (endpoint, options = {}) => {
   if (!API_BASE_URL) {
@@ -37,9 +51,17 @@ const apiRequest = async (endpoint, options = {}) => {
     );
   }
 
-  const cleanEndpoint = endpoint.startsWith("/")
-    ? endpoint
-    : `/${endpoint}`;
+  // Normalize endpoint and prevent duplicate /api prefixes.
+  let cleanEndpoint = `/${String(endpoint).replace(/^\/+/, "")}`;
+
+  cleanEndpoint = cleanEndpoint.replace(
+    /^\/api\/api(?=\/|$)/i,
+    "/api"
+  );
+
+  if (!cleanEndpoint.toLowerCase().startsWith("/api/")) {
+    cleanEndpoint = `/api${cleanEndpoint}`;
+  }
 
   const url = `${API_BASE_URL}${cleanEndpoint}`;
 
@@ -51,18 +73,47 @@ const apiRequest = async (endpoint, options = {}) => {
     },
   });
 
-  const data = await response.json().catch(() => ({}));
+  const contentType = response.headers.get("content-type") || "";
+  const responseText = await response.text();
+
+  let data = {};
+
+  if (responseText && contentType.includes("application/json")) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error("Backend returned invalid JSON.");
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(
+    const message =
       data?.message ||
-        data?.error ||
-        `Request failed with status ${response.status}`
+      data?.error ||
+      `Request failed with status ${response.status}`;
+
+    const error = new Error(message);
+    error.status = response.status;
+    error.endpoint = url;
+
+    console.error("API request failed:", {
+      url,
+      status: response.status,
+      message,
+    });
+
+    throw error;
+  }
+
+  if (responseText && !contentType.includes("application/json")) {
+    throw new Error(
+      `Backend returned a non-JSON response for ${cleanEndpoint}.`
     );
   }
 
   return data;
 };
+
 
 /*
 |--------------------------------------------------------------------------
