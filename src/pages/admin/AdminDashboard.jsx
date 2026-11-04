@@ -14,106 +14,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { apiRequest } from "../../lib/api";
-/*
-|--------------------------------------------------------------------------
-| Production API Configuration
-|--------------------------------------------------------------------------
-| Vercel Environment Variable:
-|
-| API_URL=https://velsaka-pm-server.onrender.com
-|
-| API paths are added inside apiRequest() calls.
-|--------------------------------------------------------------------------
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| API Configuration
-|--------------------------------------------------------------------------
-| Supports both:
-| API_URL=http://localhost:5000
-| API_URL=http://localhost:5000/api
-|
-| All API requests use exactly one /api prefix.
-|--------------------------------------------------------------------------
-*/
-
-const API_BASE_URL = (import.meta.env.API_URL || "")
-  .trim()
-  .replace(/\/+$/, "")
-  .replace(/\/api$/i, "");
-
-const apiRequest = async (endpoint, options = {}) => {
-  if (!API_BASE_URL) {
-    throw new Error(
-      "API_URL environment variable is not configured."
-    );
-  }
-
-  // Normalize endpoint and prevent duplicate /api prefixes.
-  let cleanEndpoint = `/${String(endpoint).replace(/^\/+/, "")}`;
-
-  cleanEndpoint = cleanEndpoint.replace(
-    /^\/api\/api(?=\/|$)/i,
-    "/api"
-  );
-
-  if (!cleanEndpoint.toLowerCase().startsWith("/api/")) {
-    cleanEndpoint = `/api${cleanEndpoint}`;
-  }
-
-  const url = `${API_BASE_URL}${cleanEndpoint}`;
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
-
-  const contentType = response.headers.get("content-type") || "";
-  const responseText = await response.text();
-
-  let data = {};
-
-  if (responseText && contentType.includes("application/json")) {
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      throw new Error("Backend returned invalid JSON.");
-    }
-  }
-
-  if (!response.ok) {
-    const message =
-      data?.message ||
-      data?.error ||
-      `Request failed with status ${response.status}`;
-
-    const error = new Error(message);
-    error.status = response.status;
-    error.endpoint = url;
-
-    console.error("API request failed:", {
-      url,
-      status: response.status,
-      message,
-    });
-
-    throw error;
-  }
-
-  if (responseText && !contentType.includes("application/json")) {
-    throw new Error(
-      `Backend returned a non-JSON response for ${cleanEndpoint}.`
-    );
-  }
-
-  return data;
-};
-
 
 /*
 |--------------------------------------------------------------------------
@@ -141,13 +41,10 @@ const getProjectStatusClass = (status) => {
   switch (status) {
     case "active":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
-
     case "completed":
       return "bg-blue-50 text-blue-700 border-blue-200";
-
     case "on-hold":
       return "bg-amber-50 text-amber-700 border-amber-200";
-
     case "planning":
     default:
       return "bg-slate-50 text-slate-700 border-slate-200";
@@ -158,13 +55,10 @@ const getTaskStatusClass = (status) => {
   switch (status) {
     case "completed":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
-
     case "in-progress":
       return "bg-blue-50 text-blue-700 border-blue-200";
-
     case "review":
       return "bg-purple-50 text-purple-700 border-purple-200";
-
     case "todo":
     default:
       return "bg-slate-50 text-slate-700 border-slate-200";
@@ -175,13 +69,10 @@ const getPriorityClass = (priority) => {
   switch (priority) {
     case "urgent":
       return "bg-red-50 text-red-700 border-red-200";
-
     case "high":
       return "bg-orange-50 text-orange-700 border-orange-200";
-
     case "medium":
       return "bg-amber-50 text-amber-700 border-amber-200";
-
     case "low":
     default:
       return "bg-slate-50 text-slate-600 border-slate-200";
@@ -194,20 +85,12 @@ const getPriorityClass = (priority) => {
 |--------------------------------------------------------------------------
 */
 
-const StatCard = ({
-  title,
-  value,
-  icon: Icon,
-  description,
-  loading,
-}) => {
+const StatCard = ({ title, value, icon: Icon, description, loading }) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-slate-500">
-            {title}
-          </p>
+          <p className="text-sm font-medium text-slate-500">{title}</p>
 
           {loading ? (
             <div className="mt-3 h-8 w-20 animate-pulse rounded-lg bg-slate-200" />
@@ -217,16 +100,11 @@ const StatCard = ({
             </p>
           )}
 
-          <p className="mt-2 text-xs text-slate-500">
-            {description}
-          </p>
+          <p className="mt-2 text-xs text-slate-500">{description}</p>
         </div>
 
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100">
-          <Icon
-            size={21}
-            className="text-slate-700"
-          />
+          <Icon size={21} className="text-slate-700" />
         </div>
       </div>
     </div>
@@ -244,15 +122,10 @@ const EmptyState = ({ message }) => {
     <div className="flex min-h-[180px] items-center justify-center px-6 text-center">
       <div>
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-100">
-          <FolderKanban
-            size={20}
-            className="text-slate-500"
-          />
+          <FolderKanban size={20} className="text-slate-500" />
         </div>
 
-        <p className="mt-3 text-sm font-medium text-slate-700">
-          {message}
-        </p>
+        <p className="mt-3 text-sm font-medium text-slate-700">{message}</p>
       </div>
     </div>
   );
@@ -281,187 +154,92 @@ const AdminDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  /*
-  |--------------------------------------------------------------------------
-  | Load Dashboard
-  |--------------------------------------------------------------------------
-  */
-
-  const loadDashboard = useCallback(
-    async (isRefresh = false) => {
-      try {
-        if (isRefresh) {
-          setRefreshing(true);
-        } else {
-          setLoading(true);
-        }
-
-        setError("");
-
-        /*
-        |--------------------------------------------------------------------------
-        | Dashboard Statistics
-        |--------------------------------------------------------------------------
-        | Backend:
-        | /api/admin/dashboard/stats
-        |--------------------------------------------------------------------------
-        */
-
-        const statsResponse = await apiRequest(
-          "/api/admin/dashboard/stats"
-        );
-
-        if (statsResponse?.success === false) {
-          throw new Error(
-            statsResponse.message ||
-              "Failed to load dashboard statistics."
-          );
-        }
-
-        const stats = statsResponse?.stats || {};
-
-        setStatsData({
-          totalUsers:
-            Number(stats.totalUsers) || 0,
-
-          totalProjects:
-            Number(stats.totalProjects) || 0,
-
-          activeTasks:
-            Number(stats.activeTasks) || 0,
-
-          completedTasks:
-            Number(stats.completedTasks) || 0,
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Recent Projects
-        |--------------------------------------------------------------------------
-        | Backend:
-        | /api/projects
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-          const projectsResponse =
-            await apiRequest("/api/projects");
-
-          const projects =
-            projectsResponse?.projects ||
-            (Array.isArray(projectsResponse)
-              ? projectsResponse
-              : []);
-
-          const sortedProjects = [...projects]
-            .sort(
-              (a, b) =>
-                new Date(b.createdAt || 0) -
-                new Date(a.createdAt || 0)
-            )
-            .slice(0, 5);
-
-          setRecentProjects(sortedProjects);
-        } catch (projectsError) {
-          console.error(
-            "Recent projects error:",
-            projectsError
-          );
-
-          setRecentProjects([]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Recent Tasks
-        |--------------------------------------------------------------------------
-        | Backend:
-        | /api/tasks
-        |--------------------------------------------------------------------------
-        */
-
-        try {
-          const tasksResponse =
-            await apiRequest("/api/tasks");
-
-          const tasks =
-            tasksResponse?.tasks ||
-            (Array.isArray(tasksResponse)
-              ? tasksResponse
-              : []);
-
-          const sortedTasks = [...tasks]
-            .sort(
-              (a, b) =>
-                new Date(b.createdAt || 0) -
-                new Date(a.createdAt || 0)
-            )
-            .slice(0, 5);
-
-          setRecentTasks(sortedTasks);
-        } catch (tasksError) {
-          console.error(
-            "Recent tasks error:",
-            tasksError
-          );
-
-          setRecentTasks([]);
-        }
-      } catch (dashboardError) {
-        console.error(
-          "Dashboard loading error:",
-          dashboardError
-        );
-
-        setError(
-          dashboardError?.message ||
-            "Unable to load dashboard information."
-        );
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+  const loadDashboard = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    },
-    []
-  );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Initial Load
-  |--------------------------------------------------------------------------
-  */
+      setError("");
+
+      const statsResponse = await apiRequest("/admin/dashboard/stats");
+
+      if (statsResponse?.success === false) {
+        throw new Error(
+          statsResponse.message || "Failed to load dashboard statistics."
+        );
+      }
+
+      const stats = statsResponse?.stats || {};
+
+      setStatsData({
+        totalUsers: Number(stats.totalUsers) || 0,
+        totalProjects: Number(stats.totalProjects) || 0,
+        activeTasks: Number(stats.activeTasks) || 0,
+        completedTasks: Number(stats.completedTasks) || 0,
+      });
+
+      try {
+        const projectsResponse = await apiRequest("/projects");
+
+        const projects =
+          projectsResponse?.projects ||
+          (Array.isArray(projectsResponse) ? projectsResponse : []);
+
+        const sortedProjects = [...projects]
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+          )
+          .slice(0, 5);
+
+        setRecentProjects(sortedProjects);
+      } catch (projectsError) {
+        console.error("Recent projects error:", projectsError);
+        setRecentProjects([]);
+      }
+
+      try {
+        const tasksResponse = await apiRequest("/tasks");
+
+        const tasks =
+          tasksResponse?.tasks ||
+          (Array.isArray(tasksResponse) ? tasksResponse : []);
+
+        const sortedTasks = [...tasks]
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+          )
+          .slice(0, 5);
+
+        setRecentTasks(sortedTasks);
+      } catch (tasksError) {
+        console.error("Recent tasks error:", tasksError);
+        setRecentTasks([]);
+      }
+    } catch (dashboardError) {
+      console.error("Dashboard loading error:", dashboardError);
+
+      setError(
+        dashboardError?.message || "Unable to load dashboard information."
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Navigation
-  |--------------------------------------------------------------------------
-  */
-
-  const handleCreateProject = () => {
-    navigate("/admin/projects");
-  };
-
-  const handleManageUsers = () => {
-    navigate("/admin/users");
-  };
-
-  const handleViewProjects = () => {
-    navigate("/admin/projects");
-  };
-
-  const handleViewTasks = () => {
-    navigate("/admin/tasks");
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
+  const handleCreateProject = () => navigate("/admin/projects");
+  const handleManageUsers = () => navigate("/admin/users");
+  const handleViewProjects = () => navigate("/admin/projects");
+  const handleViewTasks = () => navigate("/admin/tasks");
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -469,9 +247,7 @@ const AdminDashboard = () => {
 
       <main className="ml-0 min-h-screen lg:ml-64">
         <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
-
           {/* Header */}
-
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">
@@ -495,21 +271,13 @@ const AdminDashboard = () => {
             >
               <RefreshCw
                 size={16}
-                className={
-                  refreshing
-                    ? "animate-spin"
-                    : ""
-                }
+                className={refreshing ? "animate-spin" : ""}
               />
-
-              {refreshing
-                ? "Refreshing..."
-                : "Refresh"}
+              {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
           {/* Error */}
-
           {error && (
             <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
               <AlertCircle
@@ -522,9 +290,7 @@ const AdminDashboard = () => {
                   Dashboard could not be loaded
                 </p>
 
-                <p className="mt-1 text-sm text-red-700">
-                  {error}
-                </p>
+                <p className="mt-1 text-sm text-red-700">{error}</p>
               </div>
 
               <button
@@ -538,7 +304,6 @@ const AdminDashboard = () => {
           )}
 
           {/* Statistics */}
-
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Total Users"
@@ -574,11 +339,8 @@ const AdminDashboard = () => {
           </section>
 
           {/* Main Content */}
-
           <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-
             {/* Recent Projects */}
-
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                 <div>
@@ -603,60 +365,47 @@ const AdminDashboard = () => {
 
               {loading ? (
                 <div className="space-y-3 p-5">
-                  {[1, 2, 3, 4, 5].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="h-14 animate-pulse rounded-xl bg-slate-100"
-                      />
-                    )
-                  )}
+                  {[1, 2, 3, 4, 5].map((item) => (
+                    <div
+                      key={item}
+                      className="h-14 animate-pulse rounded-xl bg-slate-100"
+                    />
+                  ))}
                 </div>
               ) : recentProjects.length === 0 ? (
                 <EmptyState message="No projects available." />
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {recentProjects.map(
-                    (project) => (
-                      <div
-                        key={
-                          project._id ||
-                          project.id
-                        }
-                        className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {project.name ||
-                              "Untitled Project"}
-                          </p>
+                  {recentProjects.map((project) => (
+                    <div
+                      key={project._id || project.id}
+                      className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {project.name || "Untitled Project"}
+                        </p>
 
-                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                            <Clock3 size={13} />
-
-                            {formatDate(
-                              project.createdAt
-                            )}
-                          </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <Clock3 size={13} />
+                          {formatDate(project.createdAt)}
                         </div>
-
-                        <span
-                          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getProjectStatusClass(
-                            project.status
-                          )}`}
-                        >
-                          {project.status ||
-                            "planning"}
-                        </span>
                       </div>
-                    )
-                  )}
+
+                      <span
+                        className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getProjectStatusClass(
+                          project.status
+                        )}`}
+                      >
+                        {project.status || "planning"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
 
             {/* Recent Tasks */}
-
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                 <div>
@@ -681,77 +430,64 @@ const AdminDashboard = () => {
 
               {loading ? (
                 <div className="space-y-3 p-5">
-                  {[1, 2, 3, 4, 5].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="h-14 animate-pulse rounded-xl bg-slate-100"
-                      />
-                    )
-                  )}
+                  {[1, 2, 3, 4, 5].map((item) => (
+                    <div
+                      key={item}
+                      className="h-14 animate-pulse rounded-xl bg-slate-100"
+                    />
+                  ))}
                 </div>
               ) : recentTasks.length === 0 ? (
                 <EmptyState message="No tasks available." />
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {recentTasks.map(
-                    (task) => (
-                      <div
-                        key={
-                          task._id ||
-                          task.id
-                        }
-                        className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {task.title ||
-                              "Untitled Task"}
-                          </p>
+                  {recentTasks.map((task) => (
+                    <div
+                      key={task._id || task.id}
+                      className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {task.title || "Untitled Task"}
+                        </p>
 
-                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                            <ListTodo size={13} />
-
-                            <span className="truncate">
-                              {task.projectId
-                                ?.name ||
-                                task.project
-                                  ?.name ||
-                                "Project"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 flex-col items-end gap-1.5">
-                          <span
-                            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getTaskStatusClass(
-                              task.status
-                            )}`}
-                          >
-                            {task.status ||
-                              "todo"}
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <ListTodo size={13} />
+                          <span className="truncate">
+                            {task.projectId?.name ||
+                              task.project?.name ||
+                              "Project"}
                           </span>
-
-                          {task.priority && (
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${getPriorityClass(
-                                task.priority
-                              )}`}
-                            >
-                              {task.priority}
-                            </span>
-                          )}
                         </div>
                       </div>
-                    )
-                  )}
+
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getTaskStatusClass(
+                            task.status
+                          )}`}
+                        >
+                          {task.status || "todo"}
+                        </span>
+
+                        {task.priority && (
+                          <span
+                            className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${getPriorityClass(
+                              task.priority
+                            )}`}
+                          >
+                            {task.priority}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
           </div>
 
           {/* Quick Actions */}
-
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4">
               <h2 className="text-base font-bold text-slate-900">
@@ -764,9 +500,6 @@ const AdminDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-
-              {/* Create Project */}
-
               <button
                 type="button"
                 onClick={handleCreateProject}
@@ -780,14 +513,11 @@ const AdminDashboard = () => {
                   <p className="text-sm font-semibold text-slate-900">
                     Create Project
                   </p>
-
                   <p className="mt-0.5 text-xs text-slate-500">
                     Start a new project
                   </p>
                 </div>
               </button>
-
-              {/* Manage Users */}
 
               <button
                 type="button"
@@ -802,14 +532,11 @@ const AdminDashboard = () => {
                   <p className="text-sm font-semibold text-slate-900">
                     Manage Users
                   </p>
-
                   <p className="mt-0.5 text-xs text-slate-500">
                     Manage team members
                   </p>
                 </div>
               </button>
-
-              {/* Manage Tasks */}
 
               <button
                 type="button"
@@ -824,7 +551,6 @@ const AdminDashboard = () => {
                   <p className="text-sm font-semibold text-slate-900">
                     Manage Tasks
                   </p>
-
                   <p className="mt-0.5 text-xs text-slate-500">
                     View and manage tasks
                   </p>

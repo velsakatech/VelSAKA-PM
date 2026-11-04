@@ -17,30 +17,7 @@ import {
 
 import UserLayout from "./UserLayout";
 import { useAuth } from "../../context/AuthContext";
-
-const API_BASE_URL = import.meta.env.API_URL;
-
-/* =========================================================
-   API REQUEST
-========================================================= */
-
-const apiRequest = async (endpoint, options = {}) => {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data?.message || `Request failed: ${response.status}`);
-  }
-
-  return data;
-};
+import { apiRequest } from "../../lib/api";
 
 /* =========================================================
    HELPERS
@@ -78,7 +55,6 @@ const getFirstName = (name) => {
   return name.trim().split(" ")[0];
 };
 
-/* FIXED: this function was missing */
 const getInitial = (name) => {
   return name?.trim()?.charAt(0)?.toUpperCase() || "U";
 };
@@ -142,10 +118,6 @@ function UserDashboard() {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
 
-  /*
-   * IMPORTANT
-   * Backend expects MongoDB User _id.
-   */
   const mongoUserId = user?._id || user?.id;
 
   /* =========================================================
@@ -171,26 +143,22 @@ function UserDashboard() {
         apiRequest(`/tasks/user/${mongoUserId}`),
       ]);
 
-      /* ---------------- PROJECTS ---------------- */
-
       const fetchedProjects =
         projectsResponse?.projects ||
         (Array.isArray(projectsResponse) ? projectsResponse : []);
 
       const sortedProjects = [...fetchedProjects].sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
       );
 
       setProjects(sortedProjects);
-
-      /* ---------------- TASKS ---------------- */
 
       const fetchedTasks =
         tasksResponse?.tasks ||
         (Array.isArray(tasksResponse) ? tasksResponse : []);
 
       const sortedTasks = [...fetchedTasks].sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
       );
 
       setTasks(sortedTasks);
@@ -224,9 +192,7 @@ function UserDashboard() {
 
     if (!mongoUserId) {
       setLoading(false);
-
       setError("User information is unavailable. Please login again.");
-
       return;
     }
 
@@ -240,11 +206,11 @@ function UserDashboard() {
   const totalProjects = projects.length;
 
   const pendingTasks = tasks.filter(
-    (task) => task.status !== "completed",
+    (task) => task.status !== "completed"
   ).length;
 
   const completedTasks = tasks.filter(
-    (task) => task.status === "completed",
+    (task) => task.status === "completed"
   ).length;
 
   const upcomingTasks = tasks.filter((task) => {
@@ -314,11 +280,8 @@ function UserDashboard() {
   ========================================================= */
 
   const userName = user?.name || "User";
-
   const userEmail = user?.email || "";
-
   const userJobRole = user?.jobRole || "Team Member";
-
   const userDepartment = user?.department || "—";
 
   /* =========================================================
@@ -329,16 +292,15 @@ function UserDashboard() {
     <UserLayout>
       <div className="min-h-screen bg-[#f7f8fc]">
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-          {/* =================================================
-              HEADER
-          ================================================= */}
-
+          {/* HEADER */}
           <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-400">
                 <span>Workspace</span>
                 <span>/</span>
-                <span className="font-semibold text-slate-600">Dashboard</span>
+                <span className="font-semibold text-slate-600">
+                  Dashboard
+                </span>
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -360,15 +322,11 @@ function UserDashboard() {
                 size={15}
                 className={refreshing ? "animate-spin" : ""}
               />
-
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
-          {/* =================================================
-              ERROR
-          ================================================= */}
-
+          {/* ERROR */}
           {error && (
             <div className="mb-6 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -380,8 +338,9 @@ function UserDashboard() {
                   <p className="text-sm font-semibold text-red-800">
                     Unable to load dashboard
                   </p>
-
-                  <p className="mt-1 text-xs leading-5 text-red-600">{error}</p>
+                  <p className="mt-1 text-xs leading-5 text-red-600">
+                    {error}
+                  </p>
                 </div>
               </div>
 
@@ -395,10 +354,7 @@ function UserDashboard() {
             </div>
           )}
 
-          {/* =================================================
-              STATS
-          ================================================= */}
-
+          {/* STATS */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
@@ -434,13 +390,9 @@ function UserDashboard() {
             })}
           </div>
 
-          {/* =================================================
-              PROJECTS + TASKS
-          ================================================= */}
-
+          {/* PROJECTS + TASKS */}
           <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-            {/* ================= PROJECTS ================= */}
-
+            {/* PROJECTS */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
                 <div>
@@ -448,7 +400,6 @@ function UserDashboard() {
                     <h2 className="text-base font-bold text-slate-900">
                       My Projects
                     </h2>
-
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
                       {projects.length}
                     </span>
@@ -478,7 +429,6 @@ function UserDashboard() {
                   <p className="mt-3 text-sm font-semibold text-slate-700">
                     No projects assigned
                   </p>
-
                   <p className="mt-1 text-xs text-slate-500">
                     Projects assigned to you will appear here.
                   </p>
@@ -493,10 +443,8 @@ function UserDashboard() {
                           className="flex items-center gap-3 px-5 py-4 sm:px-6"
                         >
                           <div className="h-10 w-10 animate-pulse rounded-xl bg-slate-200" />
-
                           <div className="flex-1">
                             <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-
                             <div className="mt-2 h-3 w-24 animate-pulse rounded bg-slate-100" />
                           </div>
                         </div>
@@ -513,8 +461,8 @@ function UserDashboard() {
                           onClick={() =>
                             navigate(
                               `/user/dashboard/projects?project=${getId(
-                                project,
-                              )}`,
+                                project
+                              )}`
                             )
                           }
                           className="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-slate-50 sm:px-6"
@@ -558,8 +506,7 @@ function UserDashboard() {
               )}
             </section>
 
-            {/* ================= TASKS ================= */}
-
+            {/* TASKS */}
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
                 <div>
@@ -567,7 +514,6 @@ function UserDashboard() {
                     <h2 className="text-base font-bold text-slate-900">
                       My Tasks
                     </h2>
-
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
                       {tasks.length}
                     </span>
@@ -597,7 +543,6 @@ function UserDashboard() {
                   <p className="mt-3 text-sm font-semibold text-slate-700">
                     No tasks assigned
                   </p>
-
                   <p className="mt-1 text-xs text-slate-500">
                     Tasks assigned to you will appear here.
                   </p>
@@ -612,12 +557,9 @@ function UserDashboard() {
                           className="flex items-start gap-3 px-5 py-4 sm:px-6"
                         >
                           <div className="h-10 w-10 animate-pulse rounded-xl bg-slate-200" />
-
                           <div className="flex-1">
                             <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
-
                             <div className="mt-2 h-3 w-32 animate-pulse rounded bg-slate-100" />
-
                             <div className="mt-2 h-3 w-24 animate-pulse rounded bg-slate-100" />
                           </div>
                         </div>
@@ -626,7 +568,6 @@ function UserDashboard() {
                   ) : (
                     recentTasks.map((task) => {
                       const status = task.status || "todo";
-
                       const priority = task.priority || "medium";
 
                       return (
@@ -659,7 +600,6 @@ function UserDashboard() {
                             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                               <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
                                 <FolderKanban size={11} />
-
                                 {task.projectId?.name || "Unknown Project"}
                               </span>
                             </div>
@@ -676,14 +616,12 @@ function UserDashboard() {
                                 ) : (
                                   <Clock3 size={10} />
                                 )}
-
                                 {taskStatusLabels[status] || "To Do"}
                               </span>
 
                               {task.dueDate && (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
                                   <CalendarDays size={10} />
-
                                   {formatDate(task.dueDate)}
                                 </span>
                               )}
@@ -703,17 +641,13 @@ function UserDashboard() {
             </section>
           </div>
 
-          {/* =================================================
-              UPCOMING TASKS
-          ================================================= */}
-
+          {/* UPCOMING TASKS */}
           <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-slate-900">
                   Upcoming Tasks
                 </h2>
-
                 <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-600">
                   {upcomingTasks}
                 </span>
@@ -733,7 +667,6 @@ function UserDashboard() {
                 <p className="mt-3 text-sm font-semibold text-slate-700">
                   No upcoming deadlines
                 </p>
-
                 <p className="mt-1 text-xs text-slate-500">
                   You are all caught up.
                 </p>
@@ -776,7 +709,6 @@ function UserDashboard() {
                       <p className="text-xs font-semibold text-slate-700">
                         {formatDate(task.dueDate)}
                       </p>
-
                       <p className="mt-1 text-[10px] text-slate-400">
                         Due date
                       </p>
@@ -787,16 +719,12 @@ function UserDashboard() {
             )}
           </section>
 
-          {/* =================================================
-              MY INFORMATION
-          ================================================= */}
-
+          {/* MY INFORMATION */}
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5">
               <h2 className="text-base font-bold text-slate-900">
                 My Information
               </h2>
-
               <p className="mt-1 text-xs text-slate-500">
                 Your current account information.
               </p>
@@ -804,7 +732,6 @@ function UserDashboard() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* NAME */}
-
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
@@ -815,7 +742,6 @@ function UserDashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Name
                     </p>
-
                     <p className="mt-1 truncate text-sm font-semibold text-slate-800">
                       {userName}
                     </p>
@@ -824,7 +750,6 @@ function UserDashboard() {
               </div>
 
               {/* EMAIL */}
-
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
@@ -835,7 +760,6 @@ function UserDashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Email
                     </p>
-
                     <p className="mt-1 truncate text-sm font-semibold text-slate-800">
                       {userEmail || "—"}
                     </p>
@@ -844,7 +768,6 @@ function UserDashboard() {
               </div>
 
               {/* JOB ROLE */}
-
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
@@ -855,7 +778,6 @@ function UserDashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Job Role
                     </p>
-
                     <p className="mt-1 truncate text-sm font-semibold text-slate-800">
                       {userJobRole}
                     </p>
@@ -864,7 +786,6 @@ function UserDashboard() {
               </div>
 
               {/* DEPARTMENT */}
-
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
@@ -875,7 +796,6 @@ function UserDashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       Department
                     </p>
-
                     <p className="mt-1 truncate text-sm font-semibold text-slate-800">
                       {userDepartment}
                     </p>
