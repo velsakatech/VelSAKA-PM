@@ -1,7 +1,7 @@
 // src/lib/api.js
 
 const RAW_BASE =
-  import.meta.env.VITE_API_URL || "";
+  import.meta.env.API_URL || "";
 
 const API_BASE_URL = RAW_BASE
   .trim()

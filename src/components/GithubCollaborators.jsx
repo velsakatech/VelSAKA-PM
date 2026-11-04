@@ -11,7 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.API_URL;
 
 const API_URL = `${API_BASE_URL}/github`;
 const USERS_API = `${API_BASE_URL}/users`;
